@@ -275,11 +275,21 @@ ERROR_T BTreeIndex::InsertInternal(const SIZE_T &node, const BTreeOp op, const K
             if (b.info.numkeys == 0) {
                 rc = AllocateNode(ptr);
                 if (rc) {return rc;}
-                BTreeNode b_leaf(BTREE_LEAF_NODE,
+                BTreeNode b_left_leaf(BTREE_LEAF_NODE,
                                  superblock.info.keysize,
                                  superblock.info.valuesize,
                                  superblock.info.blocksize);
-                b_leaf.Serialize(buffercache, ptr);
+                b_left_leaf.Serialize(buffercache, ptr);
+                rc = b.SetPtr(0, ptr);
+                if (rc) {return rc;}
+
+                rc = AllocateNode(ptr);
+                if (rc) {return rc;}
+                BTreeNode b_right_leaf(BTREE_LEAF_NODE,
+                                      superblock.info.keysize,
+                                      superblock.info.valuesize,
+                                      superblock.info.blocksize);
+                b_right_leaf.Serialize(buffercache, ptr);
                 b.info.numkeys++;
                 rc = b.SetKey(0, key);
                 if (rc) {return rc;}
@@ -320,6 +330,8 @@ ERROR_T BTreeIndex::InsertInternal(const SIZE_T &node, const BTreeOp op, const K
                     b.Serialize(buffercache, node);
                     return rc;
                 }
+            } else { // split
+                // increase depth; create new root;
             }
             break;
         }
