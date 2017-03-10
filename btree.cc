@@ -16,7 +16,8 @@ KeyValuePair::KeyValuePair(const KeyValuePair &rhs) :
 
 
 KeyValuePair::~KeyValuePair()
-{}
+{
+}
 
 
 KeyValuePair & KeyValuePair::operator=(const KeyValuePair &rhs)
@@ -272,31 +273,24 @@ ERROR_T BTreeIndex::InsertInternal(const SIZE_T &node, const BTreeOp op, const K
 
     switch (b.info.nodetype) {
         case BTREE_ROOT_NODE: {
-            // No keys so far, need to allocate node
+            // No keys so far, need to allocate node or go into first leaf node
             if (b.info.numkeys == 0) {
-                rc = AllocateNode(ptr);
+                rc = b.GetPtr(0, ptr);
                 if (rc) {return rc;}
-                BTreeNode b_left_leaf(BTREE_LEAF_NODE,
-                                 superblock.info.keysize,
-                                 superblock.info.valuesize,
-                                 superblock.info.blocksize);
-                b_left_leaf.Serialize(buffercache, ptr);
-                rc = b.SetPtr(0, ptr);
-                if (rc) {return rc;}
+                // need to alloc node
+                if (ptr != node+1)  {
+                    rc = AllocateNode(ptr);
+                    if (rc) {return rc;}
+                    BTreeNode b_leaf(BTREE_LEAF_NODE,
+                                     superblock.info.keysize,
+                                     superblock.info.valuesize,
+                                     superblock.info.blocksize);
+                    b_leaf.Serialize(buffercache, ptr);
+                    rc = b.SetPtr(0, ptr);
+                    if (rc) {return rc;}
 
-                rc = AllocateNode(ptr);
-                if (rc) {return rc;}
-                BTreeNode b_right_leaf(BTREE_LEAF_NODE,
-                                      superblock.info.keysize,
-                                      superblock.info.valuesize,
-                                      superblock.info.blocksize);
-                b_right_leaf.Serialize(buffercache, ptr);
-                b.info.numkeys++;
-                rc = b.SetKey(0, key);
-                if (rc) {return rc;}
-                rc = b.SetPtr(1, ptr);
-                if (rc) {return rc;}
-                b.Serialize(buffercache, node);
+                    b.Serialize(buffercache, node);
+                }
                 return InsertInternal(ptr, op, key, value);
                 break;
             }
@@ -323,12 +317,16 @@ ERROR_T BTreeIndex::InsertInternal(const SIZE_T &node, const BTreeOp op, const K
                     rc = b.GetKey(offset, testkey);
                     if (rc) {return rc;}
                     if (key < testkey) {
-                        KeyValuePair tempkeyval;
                         for (temp=b.info.numkeys-2; temp>=offset; temp--) {
+                            KeyValuePair tempkeyval;
                             rc = b.GetKeyVal(temp, tempkeyval);
                             if (rc) {return rc;}
                             rc = b.SetKeyVal(temp+1, tempkeyval);
                             if (rc) {return rc;}
+                            // Avoid overflow
+                            if (temp == 0) {
+                                break;
+                            }
                         }
                         break;
                     }
@@ -336,8 +334,11 @@ ERROR_T BTreeIndex::InsertInternal(const SIZE_T &node, const BTreeOp op, const K
                         return ERROR_CONFLICT;
                     }
                 }
-                KeyValuePair keyvalpair(key, value);
-                rc = b.SetKeyVal(offset, keyvalpair);
+//                KeyValuePair keyvalpair(key, value);
+//                rc = b.SetKeyVal(offset, keyvalpair);
+                rc = b.SetKey(offset, key);
+                if (rc) {return rc;}
+                rc = b.SetVal(offset, value);
                 if (rc) {
                     return rc;
                 } else {
@@ -345,6 +346,10 @@ ERROR_T BTreeIndex::InsertInternal(const SIZE_T &node, const BTreeOp op, const K
                     return rc;
                 }
             } else { // split
+                cerr << "Need to split" << endl;
+                cerr << "But I still insert" << endl;
+
+                return ERROR_UNIMPL;
                 // increase depth; create new root;
             }
             break;
@@ -512,7 +517,7 @@ ERROR_T BTreeIndex::DisplayInternal(const SIZE_T &node,
   switch (b.info.nodetype) { 
   case BTREE_ROOT_NODE:
   case BTREE_INTERIOR_NODE:
-    if (b.info.numkeys>0) { 
+    if (b.info.numkeys>0 || b.info.numkeys==0) {
       for (offset=0;offset<=b.info.numkeys;offset++) { 
 	rc=b.GetPtr(offset,ptr);
 	if (rc) { return rc; }
