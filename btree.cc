@@ -260,6 +260,7 @@ ERROR_T BTreeIndex::InsertInternal(const SIZE_T &node, const BTreeOp op, const K
     BTreeNode b;
     ERROR_T rc;
     SIZE_T offset;
+    SIZE_T temp;
     KEY_T testkey;
     SIZE_T ptr;
 
@@ -316,12 +317,25 @@ ERROR_T BTreeIndex::InsertInternal(const SIZE_T &node, const BTreeOp op, const K
             return InsertInternal(ptr, op, key, value);
             break;
         case BTREE_LEAF_NODE: {
-            for (offset=0;offset<b.info.numkeys;offset++) {
-                ;
-            }
-            // Seems no place for our new key, just insert at the 0
             if (b.info.numkeys < b.info.GetNumSlotsAsLeaf()) {
                 b.info.numkeys++;
+                for (offset=0;offset<b.info.numkeys-1;offset++) {
+                    rc = b.GetKey(offset, testkey);
+                    if (rc) {return rc;}
+                    if (key < testkey) {
+                        KeyValuePair tempkeyval;
+                        for (temp=b.info.numkeys-2; temp>=offset; temp--) {
+                            rc = b.GetKeyVal(temp, tempkeyval);
+                            if (rc) {return rc;}
+                            rc = b.SetKeyVal(temp+1, tempkeyval);
+                            if (rc) {return rc;}
+                        }
+                        break;
+                    }
+                    if (key == testkey) {
+                        return ERROR_CONFLICT;
+                    }
+                }
                 KeyValuePair keyvalpair(key, value);
                 rc = b.SetKeyVal(offset, keyvalpair);
                 if (rc) {
