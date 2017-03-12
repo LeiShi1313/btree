@@ -49,22 +49,34 @@ class BTreeIndex {
 
  protected:
 
-  ERROR_T      AllocateNode(SIZE_T &node);
+    ERROR_T      AllocateNode(SIZE_T &node);
 
-  ERROR_T      DeallocateNode(const SIZE_T &node);
+    ERROR_T      DeallocateNode(const SIZE_T &node);
 
-  ERROR_T      LookupOrUpdateInternal(const SIZE_T &Node,
+    ERROR_T      LookupOrUpdateInternal(const SIZE_T &Node,
 				      const BTreeOp op, 
 				      const KEY_T &key,
 				      VALUE_T &val);
 
-    ERROR_T    InsertInternal(const SIZE_T &Nnode,
+    ERROR_T    InsertInternal(const SIZE_T &node,
                                    const BTreeOp op,
                                    const KEY_T &key,
                                    const VALUE_T &value);
-  
 
-  ERROR_T      DisplayInternal(const SIZE_T &node,
+    ERROR_T    InsertHelper(SIZE_T &node,
+                KEY_T &key,
+                const VALUE_T &value);
+
+    ERROR_T    InsertKeyPtr(SIZE_T &node,
+                            KEY_T &key,
+                            SIZE_T &ptr);
+
+    ERROR_T    InsertKeyPtrHelper(const SIZE_T &curnode,
+                                    SIZE_T &node,
+                                    KEY_T &key,
+                                    SIZE_T &ptr);
+
+    ERROR_T      DisplayInternal(const SIZE_T &node,
 			       ostream &o, 
 			       const BTreeDisplayType display_type=BTREE_DEPTH) const;
 public:

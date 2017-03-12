@@ -25,6 +25,7 @@ struct Block {
   ERROR_T Resize(const SIZE_T newlength, const bool copy=true);
 
   bool operator<(const Block &rhs) const;
+    bool operator>(const Block &rhs) const;
   bool operator==(const Block &rhs) const;
 
   ostream & Print(ostream &os) const;

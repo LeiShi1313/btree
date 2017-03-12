@@ -93,6 +93,10 @@ bool Block::operator<(const Block &rhs) const
   return memcmp(data,rhs.data,MAX(length,rhs.length))<0;
 }
 
+bool Block::operator>(const Block &rhs) const
+{
+  return memcmp(data,rhs.data,MAX(length,rhs.length))>0;
+}
 
 bool Block::operator==(const Block &rhs) const
 {
