@@ -249,11 +249,12 @@ ERROR_T BTreeIndex::LookupOrUpdateInternal(const SIZE_T &node,
 	        // BTREE_OP_UPDATE
             rc = b.SetVal(offset, value);
             RETURNIFERROR(rc)
-            return b.Serialize(buffercache, node);
+                return b.Serialize(buffercache, node);
 
 	    } else {
             return ERROR_INSANE;
         }
+
       }
     }
     return ERROR_NONEXISTENT;
